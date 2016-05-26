@@ -74,7 +74,7 @@ def process_page( driver, logger, page, number, category, dir )
 
   page.click()
 
-  sleep 3
+  sleep 2
   enter_iframe( driver )
 
   wait = Selenium::WebDriver::Wait.new( :timeout => 5 )
@@ -94,6 +94,7 @@ def process_page( driver, logger, page, number, category, dir )
     next if article.attribute( 'data-articleid' ) == '0'
 
     begin
+      driver.execute_script( '$( "div.newspaper-toolbar" ).toggle( false );' )
       article.click
     rescue Exception => e
       logger.error "#{e.message}"
@@ -114,6 +115,7 @@ def process_page( driver, logger, page, number, category, dir )
 
   # Cleanup!
   content.gsub!( /<([bh])r[^\/>]*>/, '<\1r />' )
+  content.gsub!( /\s+&\s+/, ' &amp; ' )
 
   doc = REXML::Document.new( content )
   calc_page_filename( dir, number ).open( 'w' ) do |handle|
