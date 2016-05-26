@@ -1,6 +1,5 @@
 #!/usr/bin/env ruby
 
-require 'date'
 require 'logger'
 require 'pathname'
 require 'rexml/document'
