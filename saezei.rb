@@ -190,7 +190,8 @@ while true
     # Remember category!
     tmp_c = [ '' ]
     if footer = overview.find_element( :css, 'div.newspaper-image-container-footer' )
-      tmp_c = footer.text.split( '/' ).map {|c| c.strip }
+      footer_text = driver.execute_script( 'return arguments[ 0 ].innerHTML;', footer )
+      tmp_c = footer_text.split( '/' ).map {|c| c.strip }
     end
 
     tmp_p = overview.find_elements( :css, 'div.newspaper-image-container' )
