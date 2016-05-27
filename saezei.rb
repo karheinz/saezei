@@ -108,14 +108,12 @@ def process_page( driver, logger, page, number, category, dir )
   end
 
   # Write result to file.
-  content = ''
-  content << "<div class=\"newspaper-page\" title=\"#{category}\">"
+  content =  "<div><title>#{category}</title>"
   content << driver.execute_script( 'return $( "div.article-text-modal" ).html();' )
   content << '</div>'
 
   # Cleanup!
   content.gsub!( /<([bh])r[^\/>]*>/, '<\1r />' )
-  content.gsub!( /\s+&\s+/, ' &amp; ' )
 
   doc = REXML::Document.new( content )
   calc_page_filename( dir, number ).open( 'w' ) do |handle|
