@@ -45,7 +45,9 @@ def convert_br( article )
 
       paragraphs = [ [ ] ]
       parts.each do |part|
-        if part.split( /\s+/ ).size < 12
+        if /<(span|i|b)>/.match( part )
+          paragraphs << [ part ]
+        elsif part.split( /\s+/ ).size < 12
           paragraphs.last << part
         else
           paragraphs << [ part ]
