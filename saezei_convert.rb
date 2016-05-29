@@ -268,8 +268,8 @@ Dir.chdir( dir.to_s ) do
       calc_and_set_id( article )
       convert_h5( article )
       convert_br( article )
-      remove_if_empty( article )
       add_headline_if_missing( article )
+      remove_if_empty( article )
     end
 
     outdir.join( file.basename.to_s ).open( 'w' ) do |handle|
