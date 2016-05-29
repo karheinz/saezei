@@ -2,7 +2,6 @@
 
 require 'logger'
 require 'pathname'
-require 'pp'
 require 'rexml/document'
 require 'rexml/xpath'
 require 'yaml'
@@ -12,38 +11,51 @@ def usage
   "usage: #{Pathname.new( $0 ).basename} {DIR}"
 end
 
-def calc_id( article )
+def calc_and_set_id( article )
   id = REXML::XPath.first( article, './*' ).text.strip
 
   id = id.gsub( /ä/, 'ae' ).gsub( /ö/, 'oe' ).gsub( /ü/, 'ue' )
   id = id.gsub( /Ä/, 'Ae' ).gsub( /Ö/, 'Oe' ).gsub( /Ü/, 'Ue' )
   id.gsub( /ß/, 'ss' )
-  id.gsub!( /[^\w\s]/, '' )
+  id.gsub!( /[^\w\s_-]/, '' )
   id.gsub!( /\s+/, '_' )
+
+  article.add_attribute( 'id', id )
 
   id
 end
 
-def convert_or_remove_br( article )
+def convert_br( article )
   children = []
   REXML::XPath.match( article, './*' ).each do |child|
     child.remove
 
-    # FIXME: Add length check!
     if child.name == 'p' and REXML::XPath.first( child, './br' )
       text = ''
       REXML::Formatters::Default.new.write( child, text )
 
-      parts = text.split( /<br\s*\/>/m )
+      text.gsub!( /\n+/m, ' ' )
+      text.strip!
+      text.sub!( /^<p>/, '' )
+      text.sub!( /<\/p>$/, '' )
+
+      parts = text.split( /<br\s*\/>/ )
       parts.map! {|p| p.strip }
       parts.delete_if {|p| p.empty? }
 
-      tmp = REXML::Document.new( "<div>#{parts.join( '</p><p>' )}</div>" ).root
-      REXML::XPath.match( tmp, './p' ).each do |p|
-        p.remove if p.text.nil? and p.elements.empty?
+      paragraphs = [ [ ] ]
+      parts.each do |part|
+        if part.split( /\s+/ ).size < 12
+          paragraphs.last << part
+        else
+          paragraphs << [ part ]
+        end
       end
 
-      children += REXML::XPath.match( tmp, './*' )
+      paragraphs.each do |paragraph|
+        tmp = REXML::Document.new( "<p>#{paragraph.join( '<br/>' )}</p>" )
+        children << tmp.root
+      end
     elsif REXML::XPath.first( child, './br' )
       REXML::XPath.match( child, './br' ).each {|br| br.remove }
       children << child
@@ -53,6 +65,12 @@ def convert_or_remove_br( article )
   end
 
   children.each {|c| article << c }
+
+  REXML::XPath.match( article, './p' ).each do |p|
+    p.remove if p.text.nil? and p.elements.empty?
+  end
+
+  article
 end
 
 def convert_h5( article )
@@ -73,6 +91,8 @@ def convert_h5( article )
   end
 
   children.each {|c| article << c }
+
+  article
 end
 
 def merge_first_two_p_if_short( article )
@@ -121,6 +141,8 @@ def merge_first_two_p_if_short( article )
   end
 
   children.each {|c| article << c }
+
+  article
 end
 
 def add_headline_if_missing( article )
@@ -158,10 +180,17 @@ def add_headline_if_missing( article )
   end
 
   children.each {|c| article << c }
+
+  # Reset id of article.
+  calc_and_set_id( article )
+
+  article
 end
 
 def remove_if_empty( article )
   article.remove unless REXML::XPath.first( article, './p' )
+
+  article
 end
 
 
@@ -191,9 +220,6 @@ Dir.chdir( dir.to_s ) do
 
   Pathname.glob( 'page[0-9][0-9].html' ).sort {|a,b| a.to_s <=> b.to_s }.each do |file|
     page = file.basename.to_s.gsub( /[^\d]/, '' ).sub( /^0/, '' )
-
-    # FIXME: Interview Seite 34.
-    next unless page == '34'
 
     source = REXML::Document.new( file.read )
     target = REXML::Document.new( '<html></html>' )
@@ -236,16 +262,12 @@ Dir.chdir( dir.to_s ) do
 
     # Process articles.
     REXML::XPath.match( body, './*' ).each do |article|
-      article.add_attribute( 'id', calc_id( article ) )
-
+      calc_and_set_id( article )
       convert_h5( article )
-      convert_or_remove_br( article )
+      convert_br( article )
       add_headline_if_missing( article )
       remove_if_empty( article )
     end
-
-    #REXML::Formatters::Pretty.new.write( target, $stdout )
-    #break
 
     outdir.join( file.basename.to_s ).open( 'w' ) do |handle|
       REXML::Formatters::Pretty.new.write( target, handle )
