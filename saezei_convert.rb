@@ -148,6 +148,7 @@ def merge_first_two_p_if_short( article )
 end
 
 def add_headline_if_missing( article )
+  return unless REXML::XPath.first( article, './*' )
   return if REXML::XPath.first( article, './*' ).name =~ /^h/i
 
   merge_first_two_p_if_short( article )
@@ -267,8 +268,8 @@ Dir.chdir( dir.to_s ) do
       calc_and_set_id( article )
       convert_h5( article )
       convert_br( article )
-      add_headline_if_missing( article )
       remove_if_empty( article )
+      add_headline_if_missing( article )
     end
 
     outdir.join( file.basename.to_s ).open( 'w' ) do |handle|
