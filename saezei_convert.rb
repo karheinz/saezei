@@ -12,13 +12,19 @@ def usage
 end
 
 def calc_and_set_id( article )
-  id = REXML::XPath.first( article, './*' ).text.strip
+  id = ''
+  REXML::Formatters::Default.new.write( REXML::XPath.first( article, './*' ), id )
 
+  id.gsub!( /\n+/m, ' ' )
+  id.gsub!( /<\/?[^>]+\s*\/?>/, '' )
+  id.strip!
+  id.gsub!( /\s+/, '_' )
+  id.gsub!( /–+/, '-' )
   id = id.gsub( /ä/, 'ae' ).gsub( /ö/, 'oe' ).gsub( /ü/, 'ue' )
   id = id.gsub( /Ä/, 'Ae' ).gsub( /Ö/, 'Oe' ).gsub( /Ü/, 'Ue' )
   id.gsub( /ß/, 'ss' )
-  id.gsub!( /[^\w\s_-]/, '' )
-  id.gsub!( /\s+/, '_' )
+  id.gsub!( /[^.\w\s_\-:,]/, '' )
+  id.gsub!( /_+/, '_' )
 
   article.add_attribute( 'id', id )
 
@@ -184,16 +190,11 @@ def add_headline_if_missing( article )
 
   children.each {|c| article << c }
 
-  # Reset id of article.
-  calc_and_set_id( article )
-
   article
 end
 
-def remove_if_empty( article )
-  article.remove unless REXML::XPath.first( article, './p' )
-
-  article
+def is_empty?( article )
+  REXML::XPath.first( article, './p' ).nil?
 end
 
 
@@ -223,6 +224,8 @@ Dir.chdir( dir.to_s ) do
 
   Pathname.glob( 'page[0-9][0-9].html' ).sort {|a,b| a.to_s <=> b.to_s }.each do |file|
     page = file.basename.to_s.gsub( /[^\d]/, '' ).sub( /^0/, '' )
+
+    logger.info "processing page #{page}"
 
     source = REXML::Document.new( file.read )
     target = REXML::Document.new( '<html></html>' )
@@ -257,19 +260,24 @@ Dir.chdir( dir.to_s ) do
     # Ignore empty pages ...
     next if articles.empty?
 
-    articles.each {|article| body << article }
-
-    # Remove all attributes.
-    nodes = REXML::XPath.match( target, '//*' )
-    nodes.each {|n| n.attributes.keys.each {|a| n.delete_attribute( a ) } }
-
     # Process articles.
-    REXML::XPath.match( body, './*' ).each do |article|
-      calc_and_set_id( article )
+    articles.each do |article|
+      # Remove all attributes.
+      nodes = REXML::XPath.match( article, '//*' )
+      nodes.each {|n| n.attributes.keys.each {|a| n.delete_attribute( a ) } }
+
       convert_h5( article )
       convert_br( article )
+
       add_headline_if_missing( article )
-      remove_if_empty( article )
+    end
+
+    # Ignore articles without text!
+    articles.delete_if {|a| is_empty?( a ) }
+
+    articles.each do |article|
+      calc_and_set_id( article )
+      body << article
     end
 
     outdir.join( file.basename.to_s ).open( 'w' ) do |handle|
