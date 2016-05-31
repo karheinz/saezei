@@ -17,7 +17,7 @@ else
 fi
 
 if (( $? != 0 )); then
-    nohup Xvfb :1 -screen 1 1600x1200x8 &>/dev/null &
+    nohup Xvfb :1 -screen 0 1600x1200x8 &>/dev/null &
     sleep 3
 fi
 
