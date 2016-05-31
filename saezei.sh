@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 
+. $HOME/.bashrc
+
 rvm use default
 rvm gemset use selenium
 
 OS=$(uname -s)
-BASEDIR=$HOME/backup/sz
+
+BASEDIR=${1:-$HOME/backup/sz}
+mkdir -p $BASEDIR
 
 if [[ "$OS" == "OpenBSD" ]]; then
     ps -a | awk '$5 ~ /Xvfb/ { print $5; }' | grep -q Xvfb
