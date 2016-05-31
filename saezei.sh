@@ -18,7 +18,7 @@ fi
 
 if (( $? != 0 )); then
     nohup Xvfb :1 -screen 1 1600x1200x8 &>/dev/null &
-    sleep 1
+    sleep 3
 fi
 
 DISPLAY=:1 saezei.rb $BASEDIR 2>> $BASEDIR/saezei.log
