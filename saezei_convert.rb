@@ -208,7 +208,7 @@ end
 
 logger = Logger.new( $stderr )
 
-dir = Pathname.new( ARGV.shift )
+dir = Pathname.new( ARGV.shift ).realpath
 
 # Default is current date.
 date = Time.now.strftime( '%d.%m.%Y' )
@@ -228,7 +228,11 @@ Dir.chdir( dir.to_s ) do
     logger.info "processing page #{page}"
 
     source = REXML::Document.new( file.read )
-    target = REXML::Document.new( '<html></html>' )
+    target = REXML::Document.new( '
+      <?xml version="1.0" encoding="utf-8"?>
+      <html xmlns="http://www.w3.org/1999/xhtml" />
+      '
+    )
 
     #<div class="article-text-\d+">
     #<h1 strcontenttype='Heading'>
@@ -280,7 +284,7 @@ Dir.chdir( dir.to_s ) do
       body << article
     end
 
-    outdir.join( file.basename.to_s ).open( 'w' ) do |handle|
+    outdir.join( file.basename( '.html' ).to_s + '.xhtml' ).open( 'w' ) do |handle|
       REXML::Formatters::Pretty.new.write( target, handle )
     end
   end
