@@ -2,8 +2,8 @@
 
 . $HOME/.bashrc
 
-rvm use default
-rvm gemset use selenium
+rvm use default &>/dev/null
+rvm gemset use selenium &>/dev/null
 
 OS=$(uname -s)
 
