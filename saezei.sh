@@ -10,13 +10,8 @@ OS=$(uname -s)
 BASEDIR=${1:-$HOME/backup/sz}
 mkdir -p $BASEDIR
 
-if [[ "$OS" == "OpenBSD" ]]; then
-    ps -a | awk '$5 ~ /Xvfb/ { print $5; }' | grep -q Xvfb
-else
-    ps -a | awk '$4 ~ /Xvfb/ { print $4; }' | grep -q Xvfb
-fi
-
-if (( $? != 0 )); then
+XVFB=$(ps aux | grep $USER | awk '$11 ~ /Xvfb/ { print $11; }' | grep -c Xvfb)
+if (( $XVFB == 0 )); then
     nohup Xvfb :1 -screen 0 1600x1200x8 &>/dev/null &
     sleep 3
 fi
@@ -26,14 +21,14 @@ if (( $? != 0 )); then
     exit 1
 fi 
 
-DIR=$(ls -tr $BASEDIR/*/ | tail -1)
+DIR=$(ls -dtr $BASEDIR/*/ | tail -1)
 
-saezei_convert.rb $BASEDIR/$DIR 2>> $BASEDIR/saezei_convert.log
+saezei_convert.rb $DIR 2>> $BASEDIR/saezei_convert.log
 if (( $? != 0 )); then
     exit 2
 fi 
 
-saezei_compile.rb $BASEDIR/$DIR 2>> $BASEDIR/saezei_compile.log
+saezei_compile.rb $DIR 2>> $BASEDIR/saezei_compile.log
 if (( $? != 0 )); then
-    exit 2
+    exit 3
 fi 
