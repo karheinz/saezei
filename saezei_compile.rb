@@ -161,7 +161,10 @@ Dir.chdir( dir.to_s ) do
 
   # Zip to Y-m-d_Saechsische_Zeitung.epub
   if date_ymd
-    Zip::File.open( "#{date_ymd}_Saechsische_Zeitung.epub", Zip::File::CREATE ) do |handle|
+    file = Pathname.new( "#{date_ymd}_Saechsische_Zeitung.epub" )
+    file.unlink if file.file?
+
+    Zip::File.open( file.to_s, Zip::File::CREATE ) do |handle|
       [ 'mimetype', 'content.opf', 'toc.ncx' ].each do |file|
         handle.add( file, file )
       end
@@ -171,6 +174,8 @@ Dir.chdir( dir.to_s ) do
         end
       end
     end
+  else
+    exit 1
   end
 end
 
