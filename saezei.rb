@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
 
 require 'logger'
+require 'net/http'
+require 'openssl'
 require 'pathname'
 require 'rexml/document'
 require 'yaml'
@@ -20,7 +22,7 @@ def calc_dirname( logger, basedir, title )
   if matches
     dir = "#{matches[ 3 ]}#{matches[ 2 ]}#{matches[ 1 ]}"
   else
-    $logger.warn( "Couldn't determine date of newspaper!" )
+    logger.warn( "Couldn't determine date of newspaper!" )
   end
 
   basedir.join( dir )
@@ -123,6 +125,33 @@ def process_page( driver, logger, page, number, category, dir )
   to_overview( driver )
 end
 
+def fetch_newspaper_title_image( driver, logger )
+  image = driver.find_element( :css => 'img.newspaper-image.thumb' )
+
+  if image
+    logger.info "Fetching thumbnail of title page."
+
+    matches = /^(https?):\/\/([^:\/]+)(:\d+)?(.*)/.match( image.attribute( 'src' ) )
+    secure = ( matches[ 1 ] == 'https' )
+    domain = matches[ 2 ]
+    port = matches[ 3 ] || ( matches[ 1 ] == 'http' ? '80' : '443' )
+    image_path = Pathname.new( matches[ 4 ] )
+
+    handle = Net::HTTP.new( domain, port )
+    handle.use_ssl = secure
+    handle.verify_mode = OpenSSL::SSL::VERIFY_NONE
+
+    cookies = driver.manage.all_cookies.select {|c| c[ :domain ] == domain and c[ :secure ] == secure }
+    cookies_string = cookies.map {|c| "#{c[ :name ]}=#{c[ :value ]}" }.join( ', ' )
+
+    response = handle.get( image_path.to_s, 'Cookie' => cookies_string )
+    Pathname.new( "page01#{image_path.extname}" ).open( 'wb' ) do |file|
+      file.write( response.body )
+    end
+  else
+    logger.warn "Thumbnail of title page not available."
+  end
+end
 
 ################################################################################
 
@@ -169,6 +198,9 @@ dir.mkpath
 
 # Enter iframe.
 enter_iframe( driver )
+
+# Fetch title page.
+fetch_newspaper_title_image( driver, logger )
 
 # To overview.
 to_overview( driver )
