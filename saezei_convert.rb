@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 
+require 'fileutils'
 require 'logger'
 require 'pathname'
 require 'rexml/document'
@@ -221,6 +222,35 @@ date = "#{m[ 3 ]}.#{m[ 2 ]}.#{m[ 1 ]}"
 Dir.chdir( dir.to_s ) do
   outdir = Pathname.new( 'epub' ).join( 'content' )
   outdir.mkpath
+
+  title = "<h1>Sächsische Zeitung vom #{date}</h1>"
+  title_page_img = Pathname.glob( 'titlepage.*' ).first
+  if title_page_img.file?
+    title = "<img alt=\"Sächsische Zeitung vom #{date}\" src=\"#{title_page_img}\" />"
+    FileUtils.cp( title_page_img.to_s, outdir.to_s )
+  end
+
+  title_page =<<-EOF
+<?xml version='1.0' encoding='utf-8'?>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>Sächsische Zeitung vom #{date}</title>
+    <style type="text/css">
+      body { margin: 0; }
+      div { text-align: center; }
+      img { height: 100%; }
+    </style>
+  </head>
+  <body>
+    <div class="center">
+      #{title}
+    </div>
+  </body>
+</html>
+EOF
+  outdir.join( 'titlepage.xhtml' ).open( 'w' ) do |handle|
+    handle.write( title_page )
+  end
 
   Pathname.glob( 'page[0-9][0-9].html' ).sort {|a,b| a.to_s <=> b.to_s }.each do |file|
     page = file.basename.to_s.gsub( /[^\d]/, '' ).sub( /^0/, '' )
