@@ -223,11 +223,15 @@ Dir.chdir( dir.to_s ) do
   outdir = Pathname.new( 'epub' ).join( 'content' )
   outdir.mkpath
 
+  logger.info "creating title page"
   title = "<h1>Sächsische Zeitung vom #{date}</h1>"
   title_page_img = Pathname.glob( 'titlepage.*' ).first
-  if title_page_img.file?
+  if title_page_img and title_page_img.file?
+    logger.info "using title page image #{title_page_img}"
     title = "<img alt=\"Sächsische Zeitung vom #{date}\" src=\"#{title_page_img}\" />"
     FileUtils.cp( title_page_img.to_s, outdir.to_s )
+  else
+    logger.warn "no title page image available"
   end
 
   title_page =<<-EOF
@@ -237,7 +241,7 @@ Dir.chdir( dir.to_s ) do
     <title>Sächsische Zeitung vom #{date}</title>
     <style type="text/css">
       body { margin: 0; }
-      div { text-align: center; }
+      div { height: 100%, width: 100%; text-align: center; }
       img { height: 100%; }
     </style>
   </head>
