@@ -16,7 +16,7 @@ if (( $XVFB == 0 )); then
     sleep 3
 fi
 
-DISPLAY=:1 saezei.rb $BASEDIR 2>> $BASEDIR/saezei.log
+DISPLAY=:1 saezei_fetch.rb $BASEDIR 2>> $BASEDIR/saezei_fetch.log
 if (( $? != 0 )); then
     exit 1
 fi 
