@@ -125,7 +125,7 @@ def process_page( driver, logger, page, number, category, dir )
   to_overview( driver )
 end
 
-def fetch_newspaper_title_image( driver, logger )
+def fetch_newspaper_title_image( driver, logger, dir )
   image = driver.find_element( :css => 'img.newspaper-image.thumb' )
 
   if image
@@ -145,7 +145,7 @@ def fetch_newspaper_title_image( driver, logger )
     cookies_string = cookies.map {|c| "#{c[ :name ]}=#{c[ :value ]}" }.join( ', ' )
 
     response = handle.get( image_path.to_s, 'Cookie' => cookies_string )
-    Pathname.new( "page01#{image_path.extname}" ).open( 'wb' ) do |file|
+    dir.join( "titlepage#{image_path.extname}" ).open( 'wb' ) do |file|
       file.write( response.body )
     end
   else
@@ -200,7 +200,7 @@ dir.mkpath
 enter_iframe( driver )
 
 # Fetch title page.
-fetch_newspaper_title_image( driver, logger )
+fetch_newspaper_title_image( driver, logger, dir )
 
 # To overview.
 to_overview( driver )
