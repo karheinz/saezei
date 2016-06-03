@@ -89,6 +89,36 @@ Dir.chdir( dir.to_s ) do
 
   date_ymd = nil
   count = 0
+
+  # Title page.
+  logger.info "processing title page"
+  nav_point = REXML::Element.new( 'navPoint' )
+  nav_point.add_attribute( 'id', SecureRandom.uuid )
+  nav_point.add_attribute( 'playOrder', count += 1 )
+  nav_point_label = REXML::Element.new( 'navLabel' )
+  nav_point_label_text = REXML::Element.new( 'text' )
+  nav_point_label_text.text = "Titelseite"
+  nav_point_label << nav_point_label_text
+  nav_point_content = REXML::Element.new( 'content' )
+  nav_point_content.add_attribute( 'src', 'content/titlepage.xhtml' )
+  nav_point << nav_point_label
+  nav_point << nav_point_content
+  nav_map = REXML::XPath::first( toc_ncx, '/ncx/navMap' )
+  nav_map << nav_point
+
+  id = 'titlepage'
+  item = REXML::Element.new( 'item' )
+  item.add_attribute( 'href', 'content/titlepage.xhtml' )
+  item.add_attribute( 'id', id )
+  item.add_attribute( 'media-type', 'application/xhtml+xml' )
+  manifest = REXML::XPath.first( content_opf, '/package/manifest' )
+  manifest << item
+  itemref = REXML::Element.new( 'itemref' )
+  itemref.add_attribute( 'idref', id )
+  spine = REXML::XPath.first( content_opf, '/package/spine' )
+  spine << itemref
+
+  # Other pages.
   Pathname.glob( 'content/page[0-9][0-9].xhtml' ).sort {|a,b| a.to_s <=> b.to_s }.each do |file|
     page_num = file.basename.to_s.gsub( /[^\d]/, '' ).sub( /^0/, '' )
 
