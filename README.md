@@ -14,6 +14,7 @@ Requirements
 * Ruby
 * Gems
     * selenium-webdriver
+    * rmagick
     * rubyzip
 
 
