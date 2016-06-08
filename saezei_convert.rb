@@ -124,7 +124,7 @@ def merge_first_two_p_if_short( article )
   end
 
   # Measure combined text length, do nothing if too long.
-  l = c[ 0 .. 1 ].reduce( 0 ) {|m,x| m += x.text.strip.split( /\s+/m ).size }
+  l = c[ 0 .. 1 ].reduce( 0 ) {|m,x| m += ( x.text || '' ).strip.split( /\s+/m ).size }
   return if l > 12
 
   parts = []
