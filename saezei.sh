@@ -5,8 +5,6 @@
 rvm use default &>/dev/null
 rvm gemset use selenium &>/dev/null
 
-OS=$(uname -s)
-
 BASEDIR=${1:-$HOME/backup/sz}
 mkdir -p $BASEDIR
 
