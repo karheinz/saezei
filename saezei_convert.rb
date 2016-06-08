@@ -5,6 +5,7 @@ require 'logger'
 require 'pathname'
 require 'rexml/document'
 require 'rexml/xpath'
+require 'rmagick'
 require 'yaml'
 
 
@@ -229,7 +230,11 @@ Dir.chdir( dir.to_s ) do
   if title_page_img and title_page_img.file?
     logger.info "using title page image #{title_page_img}"
     title = "<img alt=\"Sächsische Zeitung vom #{date}\" src=\"#{title_page_img}\" />"
-    FileUtils.cp( title_page_img.to_s, outdir.to_s )
+
+    # Resize and copy to out dir.
+    title_page_img_obj = Magick::Image.read( title_page_img.to_s ).first
+    title_page_img_obj.change_geometry( "480x640" ) {|c,r,i| i.resize!( c, r ) }
+    title_page_img_obj.write( outdir.join( title_page_img.basename.to_s ).to_s )
   else
     logger.warn "no title page image available"
   end
